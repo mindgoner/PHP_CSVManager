@@ -88,8 +88,10 @@
         private $CSVFile;
         private array $CSVContent;
         private array $CSVSelectedContent;
+        private bool $CSVHeader = false;
+        private array $CSVHeaders = array();
 
-        public function fixPolishCharacters($cleanString = false){ // Fix latin characters like Ż Ź Ą Ł Ś Ó Ń Ę Ć
+        public function fixLatinCharacters($cleanString = false){ // Fix latin characters like Ż Ź Ą Ł Ś Ó Ń Ę Ć (only polish supported)
             for($r=0; $r<count($this->CSVContent); $r++){
                 for($c=0; $c<count($this->CSVContent[$r]); $c++){
                     $originalContent = $tmpContent = $this->CSVContent[$r][$c];
@@ -133,7 +135,7 @@
                     try{
                         $this->CSVFile = fopen($this->CSVFilename, "r");
                     }catch(Exception $e){
-                        $success = false;;
+                        $success = false;
                         echo("Error while making CSV content: " . $e->getMessage());
                     }
                     if($success){
@@ -142,6 +144,7 @@
                             array_push($this->CSVContent, $CSVLine);
                         }
                         $this->CSVSelectedContent = $this->CSVContent;
+                        $this->fixLatinCharacters(true);
                     }
                 }else{
                     echo("Error while making CSV content: Delimiter not specified (for example use \$CSVManager->setDelimiter(\";\")");
@@ -159,7 +162,25 @@
             $this->CSVDelimiter = $delimiter;
         }
 
-        function __construct($filename = "", $delimiter = ""){
+        public function associateResults(){
+            $this->CSVHeader = true;
+            $this->CSVHeaders = $headers = $this->CSVSelectedContent[0];
+            $tmpAssociation = array();
+            for($r=0; $r<count($this->CSVSelectedContent); $r++){
+                $dataset = array();
+                for($c=0; $c<count($headers); $c++){
+                    $dataset[$headers[$c]] = $this->CSVSelectedContent[$r][$c];
+                }
+                $tmpAssociation[$r] = $dataset;
+                // or add to existing data:
+                //array_push($tmpAssociation, $dataset);
+            }
+            array_shift($tmpAssociation);
+            $this->CSVSelectedContent = array();
+            $this->CSVContent = $this->CSVSelectedContent = $tmpAssociation;
+        }
+
+        function __construct($filename = "", $delimiter = ",", $cleanString = false, $associateResults = false){
             if($filename != ""){
                 // Filename specified, load it fo manager
                 $this->CSVFilename = $filename;
@@ -167,9 +188,31 @@
             if($delimiter != ""){
                 $this->CSVDelimiter = $delimiter;
             }
+
             if($filename != "" && $delimiter != ""){
                 $this->makeCSVContent();
+                $this->fixLatinCharacters($cleanString);
+                if($associateResults){
+                    $this->associateResults();
+                }
             }
+        }
+
+        public function selectColumns($headerArray){
+            $output = array();
+            $this->CSVSelectedContent = $this->CSVContent;
+            for($r=0; $r<count($this->CSVSelectedContent); $r++){
+                $dataset = array();
+                foreach($this->CSVSelectedContent[$r] as $key => $value){
+                    if(in_array($key, $headerArray)){
+                        
+                        $dataset[$key] = $value;
+                    }
+                }
+                $this->CSVSelectedContent[$r] = $dataset;
+                array_push($output, $this->CSVSelectedContent[$r]);
+            }
+            $this->CSVSelectedContent = $output;
         }
 
         public function renderContent($renderType = "pre"){ // Render content "pre" or in "table"
@@ -180,19 +223,26 @@
             }
             if($renderType = "table"){
                 echo("<table>");
-                for($r=0; $r<count($this->CSVSelectedContent); $r++){
+                $r = 0;
+                foreach($this->CSVSelectedContent as $row){
                     echo("<tr>");
-                    for($c=0; $c<count($this->CSVSelectedContent[$r]); $c++){
+                    $c = 0; 
+                    foreach($this->CSVSelectedContent[$r] as $col){
                         echo("<td>");
-                            echo($this->CSVSelectedContent[$r][$c]);
+                            echo($col);
                         echo("</td>");
+                        $c++;
                     }
                     echo("</tr>");
+                    $r++;
                 }
                 echo("</table>");
             }
         }
         
+        public function getContent(){
+            return $this->CSVSelectedContent;
+        }
 
     }
 

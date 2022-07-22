@@ -14,11 +14,12 @@
 <body>
     <?php
         include 'CSVManager.php';
-        include 'comparer.php';
 
-        $CSVManager = new CSVManager("example.csv", ";"); // Load file
-        $CSVManager->fixPolishCharacters(true); // Fix polish characters
+        $CSVManager = new CSVManager("example.csv", ";", true, true); // Load file
+        $CSVManager->selectColumns(["category"]); // Specify which columns should be selected
         $CSVManager->renderContent("table"); // Display content in tabular form
+        
+        // 
 
         
     ?>
