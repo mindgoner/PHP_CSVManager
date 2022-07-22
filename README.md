@@ -16,12 +16,10 @@ Just copy **CSVManager.php** into your project and use one of the following comm
 # Usage
 
 After installing **CSVManager** use following line to initialize manager instance:
-> $CSVManager = new **CSVManager**(string "**filename.csv**", string"**delimiter**", boolean **cleanString**, , boolean **associateResults**);
+> $CSVManager = new **CSVManager**(string "**filename.csv**", string"**delimiter**");
 
 String **filename.csv** specifies which file would you like to use. 
 String **delimiter** specifies which character should be used to delimit the file content. Default: ",";
-Boolean **cleanString** (optional) specifies whether data should be purgified from unicode to utf-8 leftovers. Defalut: false.
-Boolean **associateResults** (optional) if file contains headers, set this flag to true to associate results with names, instead numeric values. Default: false
 
 Optionally, you may define **CSVManager** without defining CSV file name and delimiter:
 
@@ -55,7 +53,7 @@ If file contains headers use **associateResults** to replace number of columns w
 
 Example #1:
 
-Before: 
+Before:
 
 	Array
 	(
@@ -123,6 +121,21 @@ Example #2:
 > $CSVManager->renderContent( **["products", "price"]** ); // Select columns products and price
 
 
+## selectUniqueForColumn
+
+Select unique values of specified column
+
+Usage:
+
+> $CSVManager->**selectUniqueForColumn**( **string $column** );
+
+**string $column** - Type number of column or column name to display unique rows.
+
+Example #1:
+
+> $CSVManager->**selectUniqueForColumn**( **"category"** ); // Display all unique values from column "category"
+
+
 ## renderContent
 
 To display selected CSV content use **renderContent** method.
@@ -138,3 +151,4 @@ Example #1:
 
 Example #2:
 > $CSVManager->renderContent( **"table"** ); // Tabularic form
+

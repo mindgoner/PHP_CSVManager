@@ -88,6 +88,7 @@
         private $CSVFile;
         private array $CSVContent;
         private array $CSVSelectedContent;
+        private array $CSVSelectedHeaders = array();
         private bool $CSVHeader = false;
         private array $CSVHeaders = array();
 
@@ -107,7 +108,8 @@
                     $tmpContent = str_replace("Ê", "Ę", $tmpContent);
                     $tmpContent = str_replace("æ", "Ć", $tmpContent);
 
-                    // Add latin Ś letter in the right place:
+                    // Add latin Ś letter in the right place: 
+                    
                     $difference = $this->computeStringDiff($originalField, $tmpContent);
                     // Computed mask "010" means there is Ś missing. Append it:
                     $s_position = $this->fixLatinS($difference);
@@ -118,12 +120,12 @@
                     // Clean string from any unicode leftovers
                     if($cleanString){
                         $tmpContent = str_replace(' ', '-SPACE-', $tmpContent); // Replaces all spaces with -SPACE-.
-                        $tmpContent = preg_replace('/[^A-Za-z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\.\,\-\_]/', '', $tmpContent); // Removes special chars.
+                        $tmpContent = preg_replace('/[^A-Za-z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\\\.\,\+\-\_\/]/', '', $tmpContent); // Removes special chars.
                         $tmpContent = str_replace('-SPACE-', ' ', $tmpContent);
                     }
 
                     // Replace old string with new
-                    $this->CSVSelectedContent[$r][$c] = $this->CSVContent[$r][$c] = $tmpContent;
+                    $this->CSVContent[$r][$c] = $tmpContent;
                 }
             }
         }
@@ -143,8 +145,8 @@
                         while(($CSVLine = fgetcsv($this->CSVFile, 9999999, $this->CSVDelimiter)) !== false){
                             array_push($this->CSVContent, $CSVLine);
                         }
-                        $this->CSVSelectedContent = $this->CSVContent;
                         $this->fixLatinCharacters(true);
+                        $this->CSVSelectedContent = $this->CSVContent;
                     }
                 }else{
                     echo("Error while making CSV content: Delimiter not specified (for example use \$CSVManager->setDelimiter(\";\")");
@@ -180,7 +182,7 @@
             $this->CSVContent = $this->CSVSelectedContent = $tmpAssociation;
         }
 
-        function __construct($filename = "", $delimiter = ",", $cleanString = false, $associateResults = false){
+        function __construct($filename = "", $delimiter = ","){
             if($filename != ""){
                 // Filename specified, load it fo manager
                 $this->CSVFilename = $filename;
@@ -191,26 +193,48 @@
 
             if($filename != "" && $delimiter != ""){
                 $this->makeCSVContent();
-                $this->fixLatinCharacters($cleanString);
-                if($associateResults){
-                    $this->associateResults();
-                }
             }
         }
 
         public function selectColumns($headerArray){
             $output = array();
             $this->CSVSelectedContent = $this->CSVContent;
-            for($r=0; $r<count($this->CSVSelectedContent); $r++){
+            $r = 0;
+            foreach($this->CSVSelectedContent as $row){
                 $dataset = array();
-                foreach($this->CSVSelectedContent[$r] as $key => $value){
+                foreach($row as $key => $value){
                     if(in_array($key, $headerArray)){
-                        
                         $dataset[$key] = $value;
                     }
                 }
                 $this->CSVSelectedContent[$r] = $dataset;
                 array_push($output, $this->CSVSelectedContent[$r]);
+                $r++;
+            }
+            $this->CSVSelectedHeaders = $headerArray;
+            $this->CSVSelectedContent = $output;
+        }
+
+        public function selectUniqueForColumn($column){
+            $this->CSVSelectedHeaders = array($column);
+            $output = array();
+            $this->CSVSelectedContent = $this->CSVContent;
+            foreach($this->CSVSelectedContent as $row){
+                foreach($row as $key => $value){
+                    if($column == $key){
+                        //echo("Column: $column Key: $key Value: $value Current Array: ");
+                        if(!in_array($value, $output)){
+                            array_push($output, $value);
+                        }
+                        //print_r($output);
+                        //echo("<br />");
+                    }
+                }
+            }
+            $tmp_output = $output;
+            $output = array();
+            foreach($tmp_output as $value){
+                array_push($output, array($column => $value));
             }
             $this->CSVSelectedContent = $output;
         }
@@ -223,11 +247,18 @@
             }
             if($renderType = "table"){
                 echo("<table>");
+                if($this->CSVHeader){
+                    echo("<tr>");
+                    foreach($this->CSVSelectedHeaders as $header){
+                        echo("<td>$header</td>");
+                    }
+                    echo("</tr>");
+                }
                 $r = 0;
                 foreach($this->CSVSelectedContent as $row){
                     echo("<tr>");
                     $c = 0; 
-                    foreach($this->CSVSelectedContent[$r] as $col){
+                    foreach($row as $col){
                         echo("<td>");
                             echo($col);
                         echo("</td>");
