@@ -165,7 +165,6 @@
         }
 
         public function associateResults(){
-            $this->CSVHeader = true;
             $this->CSVHeaders = $headers = $this->CSVSelectedContent[0];
             $tmpAssociation = array();
             for($r=0; $r<count($this->CSVSelectedContent); $r++){
@@ -180,6 +179,7 @@
             array_shift($tmpAssociation);
             $this->CSVSelectedContent = array();
             $this->CSVContent = $this->CSVSelectedContent = $tmpAssociation;
+            $this->CSVHeader = true;
         }
 
         function __construct($filename = "", $delimiter = ","){
