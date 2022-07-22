@@ -56,6 +56,7 @@ If file contains headers use **associateResults** to replace number of columns w
 Example #1:
 
 Before: 
+
 	Array
 	(
 		[1] => Array
